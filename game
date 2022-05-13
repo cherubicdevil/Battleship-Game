@@ -1,0 +1,183 @@
+//Classic battleship game in java.//
+
+import java.util.*;
+import java.io.*;
+
+import java.util.Scanner;
+public class Battleship {
+  public static void main(String[] args) {
+    Scanner input = new Scanner(System.in);
+    System.out.println("Welcome to Battleship!");
+    //set up location
+    char water = '-';
+    char ship = '@';
+    char hit = 'X';
+    char miss = 'O';
+    int gameBoardLength = 5;
+    int shipNumber = 5;
+    String player1 = "Player 1";
+    String player2 = "Player 2";
+    
+    char[][] gameBoardPlayer1 = createGameBoard(player1, gameBoardLength, water, ship, shipNumber, input);
+    //creates original location board with 5 ships
+    printBattleShip(gameBoardPlayer1); //prints original location board
+    lines100(); //prints 100 blank lines
+    char[][] gameBoardPlayer2 = createGameBoard(player2, gameBoardLength, water, ship, shipNumber, input);
+    printBattleShip(gameBoardPlayer2);
+    lines100();
+    char[][] targetBoardPlayer1 = createTargetBoard(gameBoardLength, water);
+    char[][] targetBoardPlayer2 = createTargetBoard(gameBoardLength, water);
+    int undetectedShipNumber1 = shipNumber;
+    int undetectedShipNumber2 = shipNumber;
+    do {
+      int attackResult1 = attack(player1, player2, gameBoardPlayer2, targetBoardPlayer1, gameBoardLength, water, hit, miss, input, ship, undetectedShipNumber1);
+      if (attackResult1 == 0) {
+      System.out.println(player1.toUpperCase() + " WINS! YOU SUNK ALL OF YOUR OPPONENT’S SHIPS!");
+      System.out.println("Final boards:");
+      printBattleShip(gameBoardPlayer1);
+      printBattleShip(gameBoardPlayer2);
+      break;
+      } else {
+        undetectedShipNumber1 = attackResult1;
+        printBattleShip(targetBoardPlayer1);
+      }
+      int attackResult2 = attack(player2, player1, gameBoardPlayer1, targetBoardPlayer2, gameBoardLength, water, hit, miss, input, ship, undetectedShipNumber2);
+      if (attackResult2 == 0) {
+      System.out.println(player2.toUpperCase() + " WINS! YOU SUNK ALL OF YOUR OPPONENT’S SHIPS!");
+      System.out.println("Final boards:");
+      printBattleShip(gameBoardPlayer1);
+      printBattleShip(gameBoardPlayer2);
+      break;
+      } else {
+        undetectedShipNumber2 = attackResult2;
+        printBattleShip(targetBoardPlayer2);
+    }
+    } while (undetectedShipNumber1 > 0 && undetectedShipNumber2 > 0);
+  }
+
+  public static void lines100() {
+    for (int n = 0; n <= 100; n++) {
+    System.out.println("\n");
+  }
+}
+
+  private static char[][] createTargetBoard(int gameBoardLength, char water) {
+    char[][] targetBoard = new char[gameBoardLength][gameBoardLength];
+    for (int col = 0; col < gameBoardLength; col++) {
+      for (int row = 0; row < gameBoardLength; row++) {
+        targetBoard[row][col] = water; //fills board with -
+      }
+    }
+    return targetBoard; //fills with hits and/or misses
+}
+    
+  private static int attack(String player, String opponent, char[][] gameBoard, char[][] targetBoard, int gameBoardLength, char water, char hit, char miss, Scanner input, char ship, int shipNumber) {
+    System.out.println(player + ", enter hit row/column:");
+    String attackErrorMessage = player + ", enter hit row/column:";
+    int[] location = validateUserCoordinates(gameBoardLength, input, attackErrorMessage);
+    char possiblePlacement = gameBoard[location[0]][location[1]];
+    while (true) {
+    if ((targetBoard[location[0]][location[1]] == miss) || (targetBoard[location[0]][location[1]] == hit)) {
+      System.out.println("You already fired on this spot. Choose different coordinates.");
+      System.out.println(player + ", enter hit row/column:");
+      location = validateUserCoordinates(gameBoardLength, input, "");
+      possiblePlacement = gameBoard[location[0]][location[1]];
+      continue;
+    } else if (possiblePlacement == water) {
+      targetBoard[location[0]][location[1]] = miss;
+      gameBoard[location[0]][location[1]] = miss;
+      System.out.println(player.toUpperCase() + " MISSED!");
+      return shipNumber;
+    } else if (possiblePlacement == ship){
+      targetBoard[location[0]][location[1]] = hit;
+      gameBoard[location[0]][location[1]] = hit;
+      System.out.println(player.toUpperCase() + " HIT " + opponent.toUpperCase() + "’s SHIP!");
+      shipNumber--;
+      return shipNumber;
+    } else {
+      return shipNumber;
+    }
+ }
+}
+
+
+  private static void printBattleShip(char[][] player) {
+		System.out.print("  ");
+		for (int row = -1; row < 5; row++) {
+			if (row > -1) {
+				System.out.print(row + " ");
+			}
+			for (int column = 0; column < 5; column++) {
+				if (row == -1) {
+					System.out.print(column + " ");
+				} else {
+					System.out.print(player[row][column] + " ");
+				}
+			}
+			System.out.println("");
+		}
+	}
+
+  private static char[][] createGameBoard(String player, int gameBoardLength, char water, char ship, int shipNumber, Scanner input) {
+    System.out.println(player.toUpperCase() + ", ENTER YOUR SHIPS' COORDINATES.");
+    char[][] gameBoard = new char[gameBoardLength][gameBoardLength];
+    for (int col = 0; col < gameBoardLength; col++) {
+      for (int row = 0; row < gameBoardLength; row++) {
+        gameBoard[row][col] = water; //fills board with -
+      }
+    }
+    return placeShips(gameBoard, shipNumber, water, ship, input); //returns gameBoard with 5 ships and rest water
+}
+
+//generic place original ships
+  private static char[][] placeShips(char[][] gameBoard, int shipNumber, char water, char ship, Scanner input) {
+    int placedShips = 0;
+    int placedShips1 = placedShips+1;
+    int gameBoardLength = gameBoard.length;
+    while (placedShips < shipNumber) {
+      System.out.println("Enter ship " + placedShips1 + " location:");
+      int[] location = validateUserCoordinates(gameBoardLength, input, "Enter ship " + placedShips1 + " location:");
+      //checks whether coordinates are ok
+      char possiblePlacement = gameBoard[location[0]][location[1]];
+      if (possiblePlacement == water) {
+        gameBoard[location[0]][location[1]] = ship;
+        placedShips++;
+        placedShips1++;
+      } else {
+        System.out.println("You already have a ship there. Choose different coordinates.");
+      }
+    }
+    return gameBoard; //returns gameBoard with 5 ships on it
+  }
+
+//make sure inputs are valid integers, generic for every input
+private static int[] validateUserCoordinates(int gameBoardLength, Scanner input, String errorMessage) {
+    int row;
+    int col;
+    while (true) {
+        if (input.hasNextInt() == false) {
+            System.out.println("Invalid coordinates. Choose different coordinates.");
+            System.out.println(errorMessage);
+            input.next();
+            input.next();
+            continue;            
+        }
+        row = input.nextInt();
+        if (input.hasNextInt() == false) {
+            System.out.println("Invalid coordinates. Choose different coordinates.");
+            System.out.println(errorMessage);
+            input.next();
+            input.next();
+            continue;            
+        }
+        col = input.nextInt();
+      if (row < 0 || row > gameBoardLength - 1 || col < 0 || col > gameBoardLength - 1) {
+          System.out.println("Invalid coordinates. Choose different coordinates.");
+          System.out.println(errorMessage);
+      } else {
+
+          return new int[]{row, col};
+      }
+    }
+}
+}
